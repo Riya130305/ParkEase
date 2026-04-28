@@ -11,7 +11,8 @@ body {
 }
 
 button,
-input {
+input,
+select {
   font: inherit;
 }
 
@@ -37,6 +38,7 @@ button {
 
 .brand-row,
 header,
+.nav-links,
 .controls,
 .action-row,
 .section-title,
@@ -90,7 +92,8 @@ label {
   font-size: 14px;
 }
 
-input {
+input,
+select {
   width: 100%;
   border: 1px solid #cfd9e6;
   border-radius: 6px;
@@ -101,7 +104,8 @@ input {
 
 .primary,
 .controls button,
-.booking-row button {
+.booking-row button,
+.admin-form button {
   border: 0;
   border-radius: 6px;
   padding: 12px 16px;
@@ -130,6 +134,7 @@ header {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 24px;
+  flex-wrap: wrap;
 }
 
 header p,
@@ -149,8 +154,26 @@ header p,
   place-items: center;
 }
 
+.nav-links {
+  gap: 8px;
+}
+
+.nav-links a {
+  border: 1px solid #cfd9e6;
+  border-radius: 6px;
+  color: #516070;
+  padding: 10px 12px;
+  text-decoration: none;
+}
+
+.nav-links a.active {
+  background: #1f6feb;
+  border-color: #1f6feb;
+  color: #ffffff;
+}
+
 .controls {
-  grid-template-columns: repeat(2, minmax(180px, 1fr)) auto;
+  grid-template-columns: repeat(3, minmax(150px, 1fr)) auto;
   align-items: end;
   background: #ffffff;
   border: 1px solid #d8e1ee;
@@ -168,7 +191,8 @@ header p,
 }
 
 .slot-section,
-.bookings {
+.bookings,
+.admin-panel {
   margin-top: 18px;
 }
 
@@ -237,8 +261,65 @@ header p,
   gap: 4px;
 }
 
+.admin-panel {
+  background: #ffffff;
+  border: 1px solid #d8e1ee;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.metrics span {
+  background: #eef3f8;
+  border-radius: 6px;
+  padding: 8px 10px;
+  color: #516070;
+  font-size: 14px;
+}
+
+.admin-form {
+  grid-template-columns: 1fr 140px auto;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.admin-form button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.admin-slot-list {
+  display: grid;
+  gap: 8px;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.admin-slot-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #e4ebf3;
+  border-radius: 6px;
+  padding: 8px 10px;
+}
+
+.icon-button.danger {
+  color: #b42318;
+}
+
 @media (max-width: 680px) {
-  .controls {
+  .controls,
+  .admin-form {
     grid-template-columns: 1fr;
   }
 
