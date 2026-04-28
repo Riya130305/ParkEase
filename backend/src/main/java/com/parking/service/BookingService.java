@@ -18,18 +18,22 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.Principal;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class BookingService {
     private static final BigDecimal HOURLY_RATE = BigDecimal.valueOf(50);
+    private static final List<BookingStatus> BLOCKING_STATUSES = List.of(BookingStatus.ACTIVE, BookingStatus.BOOKED);
 
     private final BookingRepository bookingRepository;
     private final ParkingSlotRepository parkingSlotRepository;
     private final UserRepository userRepository;
 
     public synchronized BookingResponse createBooking(BookingRequest request, Principal principal) {
+        refreshCompletedBookings();
+
         if (!request.getEndTime().isAfter(request.getStartTime())) {
             throw new IllegalArgumentException("End time must be after start time");
         }
@@ -39,9 +43,9 @@ public class BookingService {
                 .filter(ParkingSlot::isActive)
                 .orElseThrow(() -> new NotFoundException("Parking slot not found"));
 
-        boolean overlapExists = !bookingRepository.findBySlotIdAndStatusAndStartTimeBeforeAndEndTimeAfter(
+        boolean overlapExists = !bookingRepository.findBySlotIdAndStatusInAndStartTimeBeforeAndEndTimeAfter(
                 slot.getId(),
-                BookingStatus.BOOKED,
+                BLOCKING_STATUSES,
                 request.getEndTime(),
                 request.getStartTime()
         ).isEmpty();
@@ -55,16 +59,27 @@ public class BookingService {
                 .slotId(slot.getId())
                 .startTime(request.getStartTime())
                 .endTime(request.getEndTime())
-                .status(BookingStatus.BOOKED)
+                .status(request.getEndTime().isBefore(LocalDateTime.now()) ? BookingStatus.COMPLETED : BookingStatus.ACTIVE)
                 .cost(calculateCost(request))
                 .build());
 
         return toResponse(booking, slot);
     }
 
-    public List<BookingResponse> myBookings(Principal principal) {
+    public List<BookingResponse> myBookings(BookingStatus status, Principal principal) {
+        refreshCompletedBookings();
+
         User user = currentUser(principal);
-        return bookingRepository.findByUserIdOrderByStartTimeDesc(user.getId()).stream()
+        List<Booking> bookings;
+        if (status == null) {
+            bookings = bookingRepository.findByUserIdOrderByStartTimeDesc(user.getId());
+        } else if (status == BookingStatus.ACTIVE) {
+            bookings = bookingRepository.findByUserIdAndStatusInOrderByStartTimeDesc(user.getId(), BLOCKING_STATUSES);
+        } else {
+            bookings = bookingRepository.findByUserIdAndStatusOrderByStartTimeDesc(user.getId(), status);
+        }
+
+        return bookings.stream()
                 .map(booking -> toResponse(booking, findSlot(booking.getSlotId())))
                 .toList();
     }
@@ -80,6 +95,20 @@ public class BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
         bookingRepository.save(booking);
+    }
+
+    public void refreshCompletedBookings() {
+        normalizeLegacyBookedStatus();
+
+        List<Booking> expired = bookingRepository.findByStatusAndEndTimeBefore(BookingStatus.ACTIVE, LocalDateTime.now());
+        expired.forEach(booking -> booking.setStatus(BookingStatus.COMPLETED));
+        bookingRepository.saveAll(expired);
+    }
+
+    private void normalizeLegacyBookedStatus() {
+        List<Booking> legacyBookings = bookingRepository.findByStatus(BookingStatus.BOOKED);
+        legacyBookings.forEach(booking -> booking.setStatus(BookingStatus.ACTIVE));
+        bookingRepository.saveAll(legacyBookings);
     }
 
     private BigDecimal calculateCost(BookingRequest request) {
@@ -106,7 +135,7 @@ public class BookingService {
                 .slotNumber(slot.getSlotNumber())
                 .startTime(booking.getStartTime())
                 .endTime(booking.getEndTime())
-                .status(booking.getStatus())
+                .status(booking.getStatus() == BookingStatus.BOOKED ? BookingStatus.ACTIVE : booking.getStatus())
                 .cost(booking.getCost())
                 .build();
     }

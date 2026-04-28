@@ -4,6 +4,7 @@ import com.parking.dto.AuthResponse;
 import com.parking.dto.LoginRequest;
 import com.parking.dto.RegisterRequest;
 import com.parking.entity.User;
+import com.parking.entity.UserRole;
 import com.parking.exception.ConflictException;
 import com.parking.repository.UserRepository;
 import com.parking.security.JwtService;
@@ -31,6 +32,7 @@ public class AuthService {
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .role(UserRole.USER)
                 .build());
 
         return response(user);
@@ -53,11 +55,13 @@ public class AuthService {
     }
 
     private AuthResponse response(User user) {
+        UserRole role = user.getRole() == null ? UserRole.USER : user.getRole();
         return new AuthResponse(
                 jwtService.generateToken(user.getEmail()),
                 user.getId(),
                 user.getName(),
-                user.getEmail()
+                user.getEmail(),
+                role.name()
         );
     }
 }
