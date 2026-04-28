@@ -1,6 +1,8 @@
 package com.parking.exception;
 
 import com.parking.dto.ErrorResponse;
+import org.springframework.core.convert.ConversionFailedException;
+import org.springframework.data.mapping.MappingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -24,6 +26,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({IllegalArgumentException.class, MethodArgumentNotValidException.class})
     public ResponseEntity<ErrorResponse> handleBadRequest(Exception ex) {
         return error(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler({MappingException.class, ConversionFailedException.class})
+    public ResponseEntity<ErrorResponse> handleMappingProblem(Exception ex) {
+        return error(HttpStatus.BAD_REQUEST, "Stored data has an invalid value. Restart the app once to run migrations.");
     }
 
     @ExceptionHandler(Exception.class)
