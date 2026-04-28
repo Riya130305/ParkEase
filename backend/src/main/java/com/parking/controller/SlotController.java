@@ -1,6 +1,7 @@
 package com.parking.controller;
 
 import com.parking.entity.ParkingSlot;
+import com.parking.entity.SlotType;
 import com.parking.service.SlotService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -19,8 +20,8 @@ public class SlotController {
     private final SlotService slotService;
 
     @GetMapping
-    public List<ParkingSlot> allSlots() {
-        return slotService.allSlots();
+    public List<ParkingSlot> allSlots(@RequestParam(required = false) SlotType type) {
+        return slotService.allSlots(type);
     }
 
     @GetMapping("/available")
